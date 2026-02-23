@@ -109,8 +109,8 @@
 <!-- Top bar -->
 <div id="topbar">
   <div>
-    <div class="tb-title">AR Poster - dev. by Yusuf Bilal ÇETINKAYA</div>
-    <div class="tb-sub">Zero-Shot Visual Assessment of Ovine Colostrum Quality by General-Purpose Multimodal AI: Agreement with Digital Brix Refractometry
+    <div class="tb-title">Zero-Shot Visual Assessment of Ovine Colostrum Quality by General-Purpose Multimodal AI: Agreement with Digital Brix Refractometry</div>
+    <div class="tb-sub"> devoloped by Yusuf Bilal ÇETINKAYA
 </div>
   </div>
   <div class="tb-badge"><div class="dot"></div>Live</div>
@@ -235,7 +235,7 @@ document.addEventListener('DOMContentLoaded', () => {
     vid1.play().catch(() => {});
     startDraw(vid1, ctx1, canvas1, tex1, v => raf1 = v);
     instr.classList.add('hide');
-    showBanner('📹 Kolostrum Toplama');
+    showBanner('📹 Collenting Sample');
   });
   t0.addEventListener('targetLost', () => {
     document.getElementById('plane0').setAttribute('visible', false);
@@ -253,7 +253,7 @@ document.addEventListener('DOMContentLoaded', () => {
     vid2.play().catch(() => {});
     startDraw(vid2, ctx2, canvas2, tex2, v => raf2 = v);
     instr.classList.add('hide');
-    showBanner('🐑 Neonatal Besleme ');
+    showBanner('🐑 Neonatal Feeding ');
   });
   t1.addEventListener('targetLost', () => {
     document.getElementById('plane1').setAttribute('visible', false);
