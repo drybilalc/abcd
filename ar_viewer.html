@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>WBC 2026 · AR Viewer</title>
+<title>AR Poster Viewer</title>
 <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image.prod.js"></script>
 <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
@@ -100,7 +100,7 @@
 
 <!-- Splash -->
 <div id="splash">
-  <div class="sp-logo">WBC <span>2026</span></div>
+  <div class="sp-logo">AR POSTER <span>2026</span></div>
   <div class="sp-spinner"></div>
   <div class="sp-sub">AR engine yükleniyor…<br>Posterdeki fotoğraflara kamerayı tut</div>
   <div class="sp-hint">⚠️ Kamera izni gerekli &nbsp;·&nbsp; İnternet bağlantısı şart</div>
@@ -109,8 +109,9 @@
 <!-- Top bar -->
 <div id="topbar">
   <div>
-    <div class="tb-title">WBC 2026 · AR Poster</div>
-    <div class="tb-sub">Ovine Colostrum Quality — AI Assessment</div>
+    <div class="tb-title">AR Poster - dev. by Yusuf Bilal ÇETINKAYA</div>
+    <div class="tb-sub">Zero-Shot Visual Assessment of Ovine Colostrum Quality by General-Purpose Multimodal AI: Agreement with Digital Brix Refractometry
+</div>
   </div>
   <div class="tb-badge"><div class="dot"></div>AR Live</div>
 </div>
@@ -248,7 +249,7 @@ document.addEventListener('DOMContentLoaded', () => {
     vid1.play().catch(() => {});
     startDraw(vid1, ctx1, canvas1, tex1, v => raf1 = v);
     instr.classList.add('hide');
-    showBanner('📹 Kolostrum Toplama — WBC 2026');
+    showBanner('📹 Kolostrum Toplama');
   });
   t0.addEventListener('targetLost', () => {
     document.getElementById('plane0').setAttribute('visible', false);
@@ -266,7 +267,7 @@ document.addEventListener('DOMContentLoaded', () => {
     vid2.play().catch(() => {});
     startDraw(vid2, ctx2, canvas2, tex2, v => raf2 = v);
     instr.classList.add('hide');
-    showBanner('🐑 Neonatal Besleme — WBC 2026');
+    showBanner('🐑 Neonatal Besleme ');
   });
   t1.addEventListener('targetLost', () => {
     document.getElementById('plane1').setAttribute('visible', false);
