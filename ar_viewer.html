@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>WBC 2026 · AR Viewer</title>
+
+<!-- MindAR + A-Frame -->
+<script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image.prod.js"></script>
+<script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
+
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { background:#000; overflow:hidden; font-family:'Segoe UI',sans-serif; }
+
+  /* ── Loading ── */
+  #splash {
+    position:fixed; inset:0; z-index:9999;
+    background:linear-gradient(160deg,#08192f 0%,#0a3d3a 100%);
+    display:flex; flex-direction:column;
+    align-items:center; justify-content:center; gap:18px;
+    transition:opacity .6s;
+  }
+  #splash.out { opacity:0; pointer-events:none; }
+  .sp-logo { font-size:2.2rem; font-weight:900; color:#e8b84b; letter-spacing:-1px; }
+  .sp-logo span { color:#22a99a; }
+  .sp-title { font-size:.9rem; color:#8899bb; text-align:center; padding:0 30px; }
+  .sp-spinner {
+    width:50px; height:50px;
+    border:3px solid rgba(201,151,58,.2);
+    border-top-color:#c9973a;
+    border-radius:50%;
+    animation:spin 1s linear infinite;
+  }
+  @keyframes spin { to { transform:rotate(360deg); } }
+  .sp-hint { font-size:.75rem; color:#445; text-align:center; padding:0 30px; }
+
+  /* ── Top bar ── */
+  #topbar {
+    position:fixed; top:0; left:0; right:0; z-index:100;
+    background:rgba(8,25,47,.85); backdrop-filter:blur(10px);
+    display:flex; align-items:center; justify-content:space-between;
+    padding:10px 16px; border-bottom:1px solid rgba(201,151,58,.3);
+  }
+  .tb-l .title { font-size:.85rem; font-weight:700; color:#e8b84b; }
+  .tb-l .sub { font-size:.65rem; color:#6688aa; margin-top:1px; }
+  .tb-r {
+    background:rgba(26,127,116,.25); border:1px solid #22a99a;
+    color:#22a99a; font-size:.7rem; font-weight:600;
+    padding:4px 10px; border-radius:20px;
+    display:flex; align-items:center; gap:5px;
+  }
+  .dot { width:6px; height:6px; background:#22a99a; border-radius:50%; animation:blink 1.4s ease infinite; }
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.15} }
+
+  /* ── Instruction card ── */
+  #instr {
+    position:fixed; bottom:0; left:0; right:0; z-index:100;
+    background:linear-gradient(transparent, rgba(8,25,47,.97) 30%);
+    padding:50px 20px 24px;
+    transition:opacity .5s;
+  }
+  #instr.hide { opacity:0; pointer-events:none; }
+  .inst-row {
+    display:flex; align-items:center; gap:10px;
+    margin-bottom:8px; font-size:.82rem; color:#99bbcc;
+  }
+  .inst-row .n {
+    background:#c9973a; color:#08192f;
+    width:22px; height:22px; border-radius:50%;
+    display:flex; align-items:center; justify-content:center;
+    font-size:.75rem; font-weight:700; flex-shrink:0;
+  }
+  .target-pills {
+    display:flex; gap:8px; margin-bottom:12px; flex-wrap:wrap;
+  }
+  .pill {
+    display:flex; align-items:center; gap:6px;
+    background:rgba(255,255,255,.07); border:1px solid rgba(255,255,255,.15);
+    padding:5px 10px; border-radius:8px; font-size:.75rem; color:#ccd;
+  }
+  .pill .dot2 { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
+
+  /* ── Detected banner ── */
+  #banner {
+    position:fixed; top:56px; left:50%; transform:translateX(-50%);
+    z-index:200;
+    background:linear-gradient(135deg,#1a7f74,#c9973a);
+    color:#fff; font-size:.85rem; font-weight:700;
+    padding:8px 22px; border-radius:20px;
+    opacity:0; transition:opacity .4s;
+    white-space:nowrap;
+    box-shadow:0 4px 20px rgba(0,0,0,.4);
+  }
+  #banner.show { opacity:1; }
+
+  /* ── Fullscreen AR ── */
+  a-scene { width:100vw; height:100vh; display:block; }
+</style>
+</head>
+<body>
+
+<!-- ══ SPLASH ══ -->
+<div id="splash">
+  <div class="sp-logo">WBC <span>2026</span></div>
+  <div class="sp-spinner"></div>
+  <div class="sp-title">Loading AR engine…<br>Point your camera at one of the photos on the poster</div>
+  <div class="sp-hint">⚠️ Camera permission required &nbsp;·&nbsp; Internet connection needed</div>
+</div>
+
+<!-- ══ TOP BAR ══ -->
+<div id="topbar">
+  <div class="tb-l">
+    <div class="title">WBC 2026 · AR Poster</div>
+    <div class="sub">Ovine Colostrum Quality — AI Assessment</div>
+  </div>
+  <div class="tb-r"><div class="dot"></div>AR Live</div>
+</div>
+
+<!-- ══ BANNER ══ -->
+<div id="banner" id="banner">📹 Image detected — playing video</div>
+
+<!-- ══ INSTRUCTIONS ══ -->
+<div id="instr">
+  <div class="target-pills">
+    <div class="pill"><div class="dot2" style="background:#22a99a"></div>Image 1 → Colostrum Collection Video</div>
+    <div class="pill"><div class="dot2" style="background:#e8b84b"></div>Image 2 → Neonatal Feeding Video</div>
+  </div>
+  <div class="inst-row"><div class="n">1</div>Hold phone 30–40 cm from the poster</div>
+  <div class="inst-row"><div class="n">2</div>Aim camera at either photo on the poster</div>
+  <div class="inst-row"><div class="n">3</div>Keep steady — video plays as AR overlay</div>
+</div>
+
+<!-- ══ A-FRAME SCENE ══ -->
+<a-scene
+  mindar-image="imageTargetSrc: ./targets.mind; autoStart: true; uiLoading: no; uiError: no; uiScanning: no; filterMinCF: 0.001; filterBeta: 1000; warmupTolerance: 5; missTolerance: 5"
+  color-space="sRGB"
+  renderer="colorManagement: true"
+  vr-mode-ui="enabled: false"
+  device-orientation-permission-ui="enabled: false"
+  embedded
+>
+  <a-assets>
+    <!-- 
+      VIDEO 1 — Colostrum Collection (triggered by milking photo)
+      Replace src with your actual video file URL
+    -->
+    <video id="vid1"
+      src="https://www.w3schools.com/html/mov_bbb.mp4"
+      preload="auto" playsinline webkit-playsinline loop crossorigin="anonymous"
+    ></video>
+
+    <!-- 
+      VIDEO 2 — Neonatal Feeding (triggered by lamb photo)
+      Replace src with your actual video file URL
+    -->
+    <video id="vid2"
+      src="https://www.w3schools.com/html/mov_bbb.mp4"
+      preload="auto" playsinline webkit-playsinline loop crossorigin="anonymous"
+    ></video>
+  </a-assets>
+
+  <a-camera position="0 0 0" look-controls="enabled:false"></a-camera>
+
+  <!-- ── TARGET 0: Görsel1.png — Milking photo ── -->
+  <a-entity mindar-image-target="targetIndex: 0" id="t0">
+    <a-video src="#vid1" width="1.6" height="0.9" position="0 0 0.001"></a-video>
+    <!-- Teal corner frame -->
+    <a-entity
+      geometry="primitive:plane; width:1.66; height:0.96"
+      material="color:#22a99a; opacity:0.12; side:double"
+    ></a-entity>
+    <!-- Label -->
+    <a-entity position="0 0.58 0.01">
+      <a-plane width="1.3" height="0.12" color="#1a7f74" opacity="0.9"></a-plane>
+      <a-text value="Colostrum Collection — WBC 2026"
+        align="center" color="#e8b84b" width="1.2" position="0 0 0.01"
+        font="https://cdn.aframe.io/fonts/Exo2Bold.fnt">
+      </a-text>
+    </a-entity>
+  </a-entity>
+
+  <!-- ── TARGET 1: Görsel2.png — Lamb feeding photo ── -->
+  <a-entity mindar-image-target="targetIndex: 1" id="t1">
+    <a-video src="#vid2" width="1.6" height="0.9" position="0 0 0.001"></a-video>
+    <!-- Gold corner frame -->
+    <a-entity
+      geometry="primitive:plane; width:1.66; height:0.96"
+      material="color:#c9973a; opacity:0.12; side:double"
+    ></a-entity>
+    <!-- Label -->
+    <a-entity position="0 0.58 0.01">
+      <a-plane width="1.3" height="0.12" color="#8a6210" opacity="0.9"></a-plane>
+      <a-text value="Neonatal Passive Immunity — WBC 2026"
+        align="center" color="#e8b84b" width="1.2" position="0 0 0.01"
+        font="https://cdn.aframe.io/fonts/Exo2Bold.fnt">
+      </a-text>
+    </a-entity>
+  </a-entity>
+
+</a-scene>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  const splash  = document.getElementById('splash');
+  const instr   = document.getElementById('instr');
+  const banner  = document.getElementById('banner');
+  const scene   = document.querySelector('a-scene');
+  const vid1    = document.getElementById('vid1');
+  const vid2    = document.getElementById('vid2');
+  const t0      = document.getElementById('t0');
+  const t1      = document.getElementById('t1');
+
+  let bannerTimer = null;
+
+  function showBanner(msg) {
+    banner.textContent = msg;
+    banner.classList.add('show');
+    clearTimeout(bannerTimer);
+    bannerTimer = setTimeout(() => banner.classList.remove('show'), 3500);
+  }
+
+  // AR ready → hide splash
+  scene.addEventListener('arReady', () => {
+    splash.classList.add('out');
+  });
+
+  scene.addEventListener('arError', () => {
+    splash.querySelector('.sp-title').textContent = '⚠️ AR failed to start. Check camera permissions.';
+    splash.querySelector('.sp-spinner').style.display = 'none';
+  });
+
+  // Fallback hide after 10s
+  setTimeout(() => splash.classList.add('out'), 10000);
+
+  // ── Target 0: Milking ──
+  t0.addEventListener('targetFound', () => {
+    vid1.play().catch(() => {});
+    instr.classList.add('hide');
+    showBanner('📹 Colostrum Collection Video');
+  });
+  t0.addEventListener('targetLost', () => {
+    vid1.pause(); vid1.currentTime = 0;
+    instr.classList.remove('hide');
+  });
+
+  // ── Target 1: Lamb ──
+  t1.addEventListener('targetFound', () => {
+    vid2.play().catch(() => {});
+    instr.classList.add('hide');
+    showBanner('🐑 Neonatal Feeding Video');
+  });
+  t1.addEventListener('targetLost', () => {
+    vid2.pause(); vid2.currentTime = 0;
+    instr.classList.remove('hide');
+  });
+});
+</script>
+
+<!--
+╔══════════════════════════════════════════════════════════════╗
+║             KURULUM REHBERİ — DEPLOYMENT GUIDE               ║
+╠══════════════════════════════════════════════════════════════╣
+║                                                              ║
+║  ADIM 1 — targets.mind OLUŞTUR                              ║
+║  ──────────────────────────────                              ║
+║  Siteye git:                                                 ║
+║  https://hiukim.github.io/mind-ar-js-doc/tools/compile       ║
+║                                                              ║
+║  "Add Images" butonuna tıkla                                 ║
+║  → Görsel1.png yükle  (index 0)                              ║
+║  → Görsel2.png yükle  (index 1)                              ║
+║  ÖNEMLİ: Aynı sırayla yükle! Index önemli.                  ║
+║  "Export" butonuna tıkla → targets.mind indir                ║
+║                                                              ║
+║  ADIM 2 — VİDEOLARINI HAZIRLA                               ║
+║  ────────────────────────────                                ║
+║  video1.mp4  →  metodoloji / kolostrum toplama              ║
+║  video2.mp4  →  neonatal besleme / sonuçlar                  ║
+║  Format: MP4 (H.264), max 50MB önerilir                      ║
+║                                                              ║
+║  ADIM 3 — GITHUB PAGES'E YÜKLE                              ║
+║  ─────────────────────────────                               ║
+║  github.com → New repo → "wbc2026-ar" (public)              ║
+║  Şu dosyaları yükle:                                         ║
+║    ar_viewer.html   ← bu dosya                               ║
+║    targets.mind     ← adım 1'den                             ║
+║    video1.mp4       ← senin videon                           ║
+║    video2.mp4       ← senin videon                           ║
+║  Settings → Pages → main branch → Save                       ║
+║  URL: https://KULLANICI.github.io/wbc2026-ar/ar_viewer.html  ║
+║                                                              ║
+║  ADIM 4 — VİDEO SRC'LERİNİ GÜNCELLE                        ║
+║  ────────────────────────────────────                        ║
+║  Bu dosyada ara: "mov_bbb.mp4"                               ║
+║  İkisini de değiştir:                                        ║
+║    src="./video1.mp4"   (milking trigger)                    ║
+║    src="./video2.mp4"   (lamb trigger)                       ║
+║                                                              ║
+║  ADIM 5 — QR KOD                                            ║
+║  ────────────────                                            ║
+║  qr.io veya qr-code-generator.com                            ║
+║  URL'yi gir → 300 DPI PNG indir → postere ekle              ║
+║                                                              ║
+║  TEST                                                        ║
+║  ──────                                                      ║
+║  • Gerçek baskıdan test et (ekrandan olmaz)                  ║
+║  • 30-40 cm mesafe, iyi ışık                                 ║
+║  • Trigger görsel min. 5x5 cm baskıda olmalı                 ║
+║  • İnternet bağlantısı zorunlu                               ║
+╚══════════════════════════════════════════════════════════════╝
+-->
+</body>
+</html>
