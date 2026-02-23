@@ -10,49 +10,12 @@
 <style>
   * { margin:0; padding:0; box-sizing:border-box; }
   body { background:#000; overflow:hidden; font-family:'Segoe UI',sans-serif; }
-
-  /* A-Frame canvas */
   a-scene { width:100vw; height:100vh; display:block; }
 
-  /* ── Video overlay — bu HTML videosu AR üstüne binecek ── */
-  #video-overlay {
-    display: none;
-    position: fixed;
-    inset: 0;
-    z-index: 500;
-    background: rgba(0,0,0,0.0);
-    align-items: center;
-    justify-content: center;
-    pointer-events: none;
-  }
-  #video-overlay.active { display: flex; }
+  /* Gizli video elementleri */
+  #hidden-media { position:fixed; top:-9999px; left:-9999px; opacity:0; pointer-events:none; }
 
-  #overlay-video {
-    width: 85vw;
-    max-width: 480px;
-    border-radius: 12px;
-    border: 3px solid #e8b84b;
-    box-shadow: 0 0 40px rgba(201,151,58,0.5);
-  }
-
-  #overlay-label {
-    position: fixed;
-    top: 70px; left: 50%;
-    transform: translateX(-50%);
-    z-index: 501;
-    background: rgba(8,25,47,0.9);
-    color: #e8b84b;
-    font-size: .85rem;
-    font-weight: 700;
-    padding: 7px 18px;
-    border-radius: 20px;
-    border: 1px solid #c9973a;
-    display: none;
-    white-space: nowrap;
-  }
-  #overlay-label.active { display: block; }
-
-  /* ── Splash ── */
+  /* Splash */
   #splash {
     position:fixed; inset:0; z-index:9999;
     background:linear-gradient(160deg,#08192f,#0a3d3a);
@@ -61,28 +24,26 @@
     transition:opacity .6s;
   }
   #splash.out { opacity:0; pointer-events:none; }
-  .sp-logo { font-size:2.2rem; font-weight:900; color:#e8b84b; }
+  .sp-logo { font-size:2.4rem; font-weight:900; color:#e8b84b; letter-spacing:-1px; }
   .sp-logo span { color:#22a99a; }
-  .sp-sub { font-size:.85rem; color:#8899bb; text-align:center; padding:0 30px; }
+  .sp-sub { font-size:.88rem; color:#8899bb; text-align:center; padding:0 32px; line-height:1.6; }
   .sp-spinner {
-    width:48px; height:48px;
-    border:3px solid rgba(201,151,58,.2);
-    border-top-color:#c9973a;
-    border-radius:50%;
-    animation:spin 1s linear infinite;
+    width:50px; height:50px;
+    border:3px solid rgba(201,151,58,.2); border-top-color:#c9973a;
+    border-radius:50%; animation:spin 1s linear infinite;
   }
   @keyframes spin { to { transform:rotate(360deg); } }
   .sp-hint { font-size:.72rem; color:#334; text-align:center; padding:0 30px; }
 
-  /* ── Top bar ── */
+  /* Top bar */
   #topbar {
-    position:fixed; top:0; left:0; right:0; z-index:600;
+    position:fixed; top:0; left:0; right:0; z-index:200;
     background:rgba(8,25,47,.85); backdrop-filter:blur(10px);
     display:flex; align-items:center; justify-content:space-between;
     padding:10px 16px; border-bottom:1px solid rgba(201,151,58,.3);
   }
   .tb-title { font-size:.85rem; font-weight:700; color:#e8b84b; }
-  .tb-sub { font-size:.65rem; color:#6688aa; margin-top:1px; }
+  .tb-sub   { font-size:.65rem; color:#6688aa; margin-top:1px; }
   .tb-badge {
     background:rgba(26,127,116,.25); border:1px solid #22a99a;
     color:#22a99a; font-size:.7rem; font-weight:600;
@@ -92,19 +53,29 @@
   .dot { width:6px; height:6px; background:#22a99a; border-radius:50%; animation:blink 1.4s ease infinite; }
   @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.15} }
 
-  /* ── Instructions ── */
+  /* Banner */
+  #banner {
+    position:fixed; top:62px; left:50%; transform:translateX(-50%);
+    z-index:200; white-space:nowrap;
+    background:linear-gradient(135deg,#1a7f74,#c9973a);
+    color:#fff; font-size:.82rem; font-weight:700;
+    padding:7px 20px; border-radius:20px;
+    box-shadow:0 4px 20px rgba(0,0,0,.4);
+    opacity:0; transition:opacity .4s; pointer-events:none;
+  }
+  #banner.show { opacity:1; }
+
+  /* Instructions */
   #instr {
-    position:fixed; bottom:0; left:0; right:0; z-index:600;
+    position:fixed; bottom:0; left:0; right:0; z-index:200;
     background:linear-gradient(transparent, rgba(8,25,47,.97) 30%);
-    padding:50px 20px 24px;
-    transition:opacity .4s;
+    padding:50px 20px 24px; transition:opacity .4s;
   }
   #instr.hide { opacity:0; pointer-events:none; }
   .inst-title { font-size:.8rem; font-weight:700; color:#e8b84b; margin-bottom:8px; }
   .inst-row { display:flex; align-items:center; gap:10px; margin-bottom:7px; font-size:.8rem; color:#99bbcc; }
   .inst-row .n {
-    background:#c9973a; color:#08192f;
-    width:22px; height:22px; border-radius:50%;
+    background:#c9973a; color:#08192f; width:22px; height:22px; border-radius:50%;
     display:flex; align-items:center; justify-content:center;
     font-size:.75rem; font-weight:700; flex-shrink:0;
   }
@@ -119,28 +90,33 @@
 </head>
 <body>
 
+<!-- Gizli video elementleri — canvas texture için -->
+<div id="hidden-media">
+  <video id="vid1" src="./video1.mp4" playsinline webkit-playsinline muted loop crossorigin="anonymous" width="640" height="360"></video>
+  <video id="vid2" src="./video2.mp4" playsinline webkit-playsinline muted loop crossorigin="anonymous" width="640" height="360"></video>
+  <canvas id="canvas1" width="640" height="360"></canvas>
+  <canvas id="canvas2" width="640" height="360"></canvas>
+</div>
+
 <!-- Splash -->
 <div id="splash">
   <div class="sp-logo">WBC <span>2026</span></div>
   <div class="sp-spinner"></div>
   <div class="sp-sub">AR engine yükleniyor…<br>Posterdeki fotoğraflara kamerayı tut</div>
-  <div class="sp-hint">⚠️ Kamera izni gerekli · İnternet bağlantısı şart</div>
+  <div class="sp-hint">⚠️ Kamera izni gerekli &nbsp;·&nbsp; İnternet bağlantısı şart</div>
 </div>
 
 <!-- Top bar -->
 <div id="topbar">
   <div>
-    <div class="tb-title">AR Poster</div>
-    <div class="tb-sub">AR (Augmented Reality) Poster dev. by Yusuf Bilal ÇETINKAYA</div>
+    <div class="tb-title">WBC 2026 · AR Poster</div>
+    <div class="tb-sub">Ovine Colostrum Quality — AI Assessment</div>
   </div>
   <div class="tb-badge"><div class="dot"></div>AR Live</div>
 </div>
 
-<!-- Video overlay — HTML video, A-Frame dışında -->
-<div id="video-overlay">
-  <video id="overlay-video" playsinline webkit-playsinline muted loop></video>
-</div>
-<div id="overlay-label"></div>
+<!-- Banner -->
+<div id="banner"></div>
 
 <!-- Instructions -->
 <div id="instr">
@@ -151,10 +127,10 @@
   </div>
   <div class="inst-row"><div class="n">1</div>Telefonu posterden 30–40 cm uzakta tut</div>
   <div class="inst-row"><div class="n">2</div>Kamerayı posterdeki fotoğraflardan birine yönelt</div>
-  <div class="inst-row"><div class="n">3</div>Sabit tut — video otomatik başlar</div>
+  <div class="inst-row"><div class="n">3</div>Sabit tut — video fotoğrafın tam üstünde oynar</div>
 </div>
 
-<!-- A-Frame (sadece AR tracking için, video buradan oynatılmıyor) -->
+<!-- A-Frame sahne -->
 <a-scene
   mindar-image="imageTargetSrc: ./targets.mind; autoStart: true; uiLoading: no; uiError: no; uiScanning: no; filterMinCF: 0.001; filterBeta: 1000; warmupTolerance: 5; missTolerance: 5"
   color-space="sRGB"
@@ -165,67 +141,140 @@
 >
   <a-camera position="0 0 0" look-controls="enabled:false"></a-camera>
 
-  <!-- Tracker 0: Görsel1.png -->
+  <!-- Target 0: Görsel1 — Sağım fotoğrafı -->
   <a-entity mindar-image-target="targetIndex: 0" id="t0">
-    <a-box visible="false" width="0.1" height="0.1" depth="0.1"></a-box>
+    <a-plane id="plane0"
+      width="1" height="0.5625"
+      position="0 0 0.001"
+      visible="false">
+    </a-plane>
+    <a-plane id="frame0"
+      width="1.05" height="0.61"
+      position="0 0 0"
+      material="color:#c9973a; opacity:0.3; side:double"
+      visible="false">
+    </a-plane>
   </a-entity>
 
-  <!-- Tracker 1: Görsel2.png -->
+  <!-- Target 1: Görsel2 — Kuzu fotoğrafı -->
   <a-entity mindar-image-target="targetIndex: 1" id="t1">
-    <a-box visible="false" width="0.1" height="0.1" depth="0.1"></a-box>
+    <a-plane id="plane1"
+      width="1" height="0.5625"
+      position="0 0 0.001"
+      visible="false">
+    </a-plane>
+    <a-plane id="frame1"
+      width="1.05" height="0.61"
+      position="0 0 0"
+      material="color:#22a99a; opacity:0.3; side:double"
+      visible="false">
+    </a-plane>
   </a-entity>
+
 </a-scene>
 
 <script>
 document.addEventListener('DOMContentLoaded', () => {
-  const splash   = document.getElementById('splash');
-  const instr    = document.getElementById('instr');
-  const overlay  = document.getElementById('video-overlay');
-  const ovVideo  = document.getElementById('overlay-video');
-  const ovLabel  = document.getElementById('overlay-label');
-  const scene    = document.querySelector('a-scene');
-  const t0       = document.getElementById('t0');
-  const t1       = document.getElementById('t1');
+  const splash  = document.getElementById('splash');
+  const instr   = document.getElementById('instr');
+  const banner  = document.getElementById('banner');
+  const scene   = document.querySelector('a-scene');
 
-  // ── Video kaynakları — kendi repo adresinle değiştir ──
-  const VIDEO1 = './video1.mp4';   // Görsel1 trigger
-  const VIDEO2 = './video2.mp4';   // Görsel2 trigger
+  const vid1    = document.getElementById('vid1');
+  const vid2    = document.getElementById('vid2');
+  const canvas1 = document.getElementById('canvas1');
+  const canvas2 = document.getElementById('canvas2');
+  const ctx1    = canvas1.getContext('2d');
+  const ctx2    = canvas2.getContext('2d');
 
-  function playVideo(src, label) {
-    ovVideo.src = src;
-    ovVideo.load();
-    ovVideo.play().catch(e => console.warn('play error:', e));
-    overlay.classList.add('active');
-    ovLabel.textContent = '📹 ' + label;
-    ovLabel.classList.add('active');
-    instr.classList.add('hide');
+  const t0 = document.getElementById('t0');
+  const t1 = document.getElementById('t1');
+
+  let raf1 = null, raf2 = null, bannerTimer = null;
+
+  // Canvas texture'ı A-Frame plane'e bağla
+  function bindCanvasToPlane(canvas, planeEl) {
+    const mesh = planeEl.getObject3D('mesh');
+    if (!mesh) return;
+    const texture = new THREE.CanvasTexture(canvas);
+    texture.flipY = false;
+    mesh.material.map = texture;
+    mesh.material.shader = 'flat';
+    mesh.material.needsUpdate = true;
+    return texture;
   }
 
-  function stopVideo() {
-    ovVideo.pause();
-    ovVideo.src = '';
-    overlay.classList.remove('active');
-    ovLabel.classList.remove('active');
-    instr.classList.remove('hide');
+  // Video frame'lerini canvas'a çiz
+  function startDraw(video, ctx, canvas, texture, rafSetter) {
+    function loop() {
+      if (!video.paused && !video.ended) {
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        if (texture) texture.needsUpdate = true;
+      }
+      rafSetter(requestAnimationFrame(loop));
+    }
+    rafSetter(requestAnimationFrame(loop));
   }
 
-  // AR ready
+  function showBanner(msg) {
+    banner.textContent = msg;
+    banner.classList.add('show');
+    clearTimeout(bannerTimer);
+    bannerTimer = setTimeout(() => banner.classList.remove('show'), 3500);
+  }
+
+  let tex1, tex2;
+
   scene.addEventListener('arReady', () => {
     splash.classList.add('out');
+
+    // Texture bağlantılarını kur (scene loaded olduktan sonra)
+    tex1 = bindCanvasToPlane(canvas1, document.getElementById('plane0'));
+    tex2 = bindCanvasToPlane(canvas2, document.getElementById('plane1'));
   });
+
   scene.addEventListener('arError', () => {
     splash.querySelector('.sp-sub').textContent = '⚠️ AR başlatılamadı. Kamera iznini kontrol et.';
     splash.querySelector('.sp-spinner').style.display = 'none';
   });
+
   setTimeout(() => splash.classList.add('out'), 10000);
 
-  // ── Target 0: Sağım fotoğrafı ──
-  t0.addEventListener('targetFound', () => playVideo(VIDEO1, 'Kolostrum Toplama — WBC 2026'));
-  t0.addEventListener('targetLost',  stopVideo);
+  // ── TARGET 0: Sağım fotoğrafı ──
+  t0.addEventListener('targetFound', () => {
+    if (!tex1) tex1 = bindCanvasToPlane(canvas1, document.getElementById('plane0'));
+    document.getElementById('plane0').setAttribute('visible', true);
+    document.getElementById('frame0').setAttribute('visible', true);
+    vid1.play().catch(() => {});
+    startDraw(vid1, ctx1, canvas1, tex1, v => raf1 = v);
+    instr.classList.add('hide');
+    showBanner('📹 Kolostrum Toplama — WBC 2026');
+  });
+  t0.addEventListener('targetLost', () => {
+    document.getElementById('plane0').setAttribute('visible', false);
+    document.getElementById('frame0').setAttribute('visible', false);
+    vid1.pause();
+    cancelAnimationFrame(raf1);
+    instr.classList.remove('hide');
+  });
 
-  // ── Target 1: Kuzu fotoğrafı ──
-  t1.addEventListener('targetFound', () => playVideo(VIDEO2, 'Neonatal Besleme — WBC 2026'));
-  t1.addEventListener('targetLost',  stopVideo);
+  // ── TARGET 1: Kuzu fotoğrafı ──
+  t1.addEventListener('targetFound', () => {
+    if (!tex2) tex2 = bindCanvasToPlane(canvas2, document.getElementById('plane1'));
+    document.getElementById('plane1').setAttribute('visible', true);
+    document.getElementById('frame1').setAttribute('visible', true);
+    vid2.play().catch(() => {});
+    startDraw(vid2, ctx2, canvas2, tex2, v => raf2 = v);
+    instr.classList.add('hide');
+    showBanner('🐑 Neonatal Besleme — WBC 2026');
+  });
+  t1.addEventListener('targetLost', () => {
+    document.getElementById('plane1').setAttribute('visible', false);
+    document.getElementById('frame1').setAttribute('visible', false);
+    vid2.pause();
+    cancelAnimationFrame(raf2);
+    instr.classList.remove('hide');
+  });
 });
 </script>
 
